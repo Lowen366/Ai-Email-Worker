@@ -39,4 +39,32 @@ def call_llm(system_prompt: str, task_prompt: str) -> Dict[str, Any]:
             "body_html": (
                 "<p>We noticed you enjoyed our solar lamp recently.</p>"
                 "<p>We’ve curated a small accessory that extends battery life and makes setup easier.</p>"
-                "<p
+                "<p style='font-size:12px;color:#666'>You can opt out anytime.</p>"
+            ),
+            "cta_text": "See the accessory",
+            "cta_url": CTA_FALLBACK,
+            "notes": "MOCK: Replace with real LLM output when API key is set."
+        }
+
+    provider = MODEL_PROVIDER.lower()
+    # TODO: wire your real provider call here
+    raise HTTPException(501, f"Provider '{provider}' not wired yet. Set MOCK_MODE=true to test.")
+
+@app.get("/")
+def root():
+    return {"ok": True, "service": "ai-email-worker", "version": "0.1.0"}
+
+@app.post("/write-email", response_model=EmailResponse)
+def write_email(body: RequestBody):
+    system_prompt = build_system_prompt()
+    task_prompt = build_task_prompt(body)
+    try:
+        result = call_llm(system_prompt, task_prompt)
+        email = EmailResponse(**result)
+        # Prefer caller CTA if provided; otherwise fallback
+        email.cta_url = str(body.cta_url or CTA_FALLBACK)
+        return email
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Generation failed: {e}")
