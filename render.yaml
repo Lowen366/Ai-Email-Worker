@@ -1,0 +1,18 @@
+services:
+- type: web
+name: ai-email-worker
+env: python
+plan: free
+region: frankfurt
+buildCommand: "pip install -r requirements.txt"
+startCommand: "uvicorn app:app --host 0.0.0.0 --port $PORT"
+envVars:
+- key: MOCK_MODE
+value: "true" # switch to false when you wire a provider
+- key: MODEL_PROVIDER
+value: mock
+- key: LLM_API_KEY
+sync: false # add via Render Dashboard when ready
+- key: CTA_FALLBACK
+value: https://example.com
+healthCheckPath: "/"
